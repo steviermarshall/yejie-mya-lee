@@ -161,6 +161,39 @@ button { font: inherit; }
   font-size: clamp(1.35rem, 5.5vw, 1.9rem);
 }
 
+/* ---------- scroll cues ---------- */
+.scroll-cue-wrap {
+  padding: 2.5rem 1.5rem 0;
+  text-align: center;
+}
+.scroll-cue-after-continuation {
+  margin-top: -3.5rem;
+  padding-top: 0;
+  padding-bottom: 2rem;
+}
+.scroll-cue {
+  margin: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: lowercase;
+  animation: breathe 2.6s ease-in-out infinite;
+}
+.scroll-cue svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  animation: bob 1.8s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(0.35rem); }
+}
+
 /* ---------- mute ---------- */
 .sound-control {
   position: fixed;
@@ -187,6 +220,6 @@ button { font: inherit; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gift-instruction { animation: none; }
+  .gift-instruction, .scroll-cue, .scroll-cue svg { animation: none; }
   .gift-gate, .reveal { transition-duration: 1ms; }
 }

@@ -63,6 +63,19 @@ function Reveal({
   );
 }
 
+function ScrollCue({ label = "keep scrolling", className = "" }: { label?: string; className?: string }) {
+  return (
+    <Reveal className={`scroll-cue-wrap ${className}`}>
+      <p className="scroll-cue">
+        <span>{label}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </p>
+    </Reveal>
+  );
+}
+
 function BirthdayStory() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [opened, setOpened] = useState(false);
@@ -145,12 +158,14 @@ function BirthdayStory() {
             />
           </Reveal>
         ))}
+        <ScrollCue label="the story isn't over · keep scrolling" />
       </section>
 
       <section className="ending">
         <Reveal className="continuation-wrap">
           <p className="continuation">To be continued… until Japan.</p>
         </Reveal>
+        <ScrollCue label="keep scrolling" className="scroll-cue-after-continuation" />
 
         <div className="breath" aria-hidden="true" />
 
