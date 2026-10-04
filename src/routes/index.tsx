@@ -4,7 +4,7 @@ import { Volume2, VolumeX } from "lucide-react";
 
 import promiseImage from "../assets/promise.webp";
 
-// All 32 panels, in reading order.
+// All 33 panels, in reading order.
 const panelModules = import.meta.glob("../assets/panel-*.webp", {
   eager: true,
   import: "default",
