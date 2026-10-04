@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 
 import promiseImage from "../assets/promise.webp";
+import cakeImage from "../assets/cake.webp";
+import happyBirthdayImage from "../assets/happy-birthday.webp";
 
 // All 33 panels, in reading order.
 const panelModules = import.meta.glob("../assets/panel-*.webp", {
@@ -33,6 +35,37 @@ const SPARKLES = [
   { x: 10, y: 90, size: 3, delay: 2.7, dur: 3.0, star: false },
   { x: 94, y: 48, size: 2, delay: 0.2, dur: 2.4, star: false },
 ];
+
+// Balloons that take over the screen on tap, then fly out the top.
+const BALLOON_COLORS: Array<[string, string]> = [
+  ["#ffb3e0", "#e2559f"], // pink
+  ["#dcb0ff", "#9a4de0"], // lavender
+  ["#b4d8ff", "#4b86e0"], // sky
+  ["#ffe2a0", "#e0a030"], // gold
+  ["#ffb4a6", "#e2543d"], // coral
+  ["#c0f3e0", "#3fc08d"], // mint
+  ["#ffffff", "#cfc6e6"], // pearl
+];
+let seed = 7;
+const rand = () => {
+  seed = (seed * 9301 + 49297) % 233280;
+  return seed / 233280;
+};
+const BALLOONS = Array.from({ length: 48 }, (_, i) => {
+  const col = i % 6;
+  const row = Math.floor(i / 6);
+  const [c1, c2] = BALLOON_COLORS[(i * 5 + row) % BALLOON_COLORS.length];
+  return {
+    x: col * 18 + 5 + (rand() - 0.5) * 12,
+    y: row * 13.5 - 10 + (rand() - 0.5) * 10,
+    w: 27 + rand() * 15,
+    delay: rand() * 0.5,
+    dur: 4.6 + rand() * 0.7,
+    sway: 2.2 + rand() * 1.6,
+    c1,
+    c2,
+  };
+});
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -101,6 +134,7 @@ function BirthdayStory() {
   const [opened, setOpened] = useState(false);
   const [opening, setOpening] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [balloons, setBalloons] = useState(false);
 
   // Seamless loop: jump back slightly before the true end to avoid the gap
   // some browsers leave between loop iterations.
@@ -139,7 +173,11 @@ function BirthdayStory() {
         });
     }
 
-    window.setTimeout(() => setOpened(true), 900);
+    // Balloons rise and cover the screen, the gate is removed underneath
+    // them, then they fly out the top to reveal the story.
+    setBalloons(true);
+    window.setTimeout(() => setOpened(true), 1500);
+    window.setTimeout(() => setBalloons(false), 5900);
   };
 
   const toggleMute = () => {
@@ -178,11 +216,15 @@ function BirthdayStory() {
             ))}
           </span>
 
-          <span className="gift-eyebrow">it's your day</span>
-          <span className="gift-title">
-            <span className="gift-title-line">Happy</span>
-            <span className="gift-title-line">Birthday</span>
-          </span>
+          <img className="gift-cake gift-cake-float" src={cakeImage} alt="" width={668} height={586} decoding="async" />
+          <img
+            className="gift-title-img"
+            src={happyBirthdayImage}
+            alt="Happy Birthday"
+            width={1044}
+            height={429}
+            decoding="async"
+          />
           <span className="gift-name">Mya</span>
 
           <span className="gift-instruction">
@@ -190,6 +232,35 @@ function BirthdayStory() {
             <span className="gift-instruction-text">tap to open your gift</span>
           </span>
         </button>
+      )}
+
+      {balloons && (
+        <div className="balloons" aria-hidden="true">
+          {BALLOONS.map((b, i) => (
+            <div
+              key={i}
+              className="balloon"
+              style={
+                {
+                  "--x": `${b.x}vw`,
+                  "--y": `${b.y}vh`,
+                  "--w": `${b.w}vw`,
+                  "--delay": `${b.delay}s`,
+                  "--dur": `${b.dur}s`,
+                  "--sway": `${b.sway}s`,
+                  "--c1": b.c1,
+                  "--c2": b.c2,
+                } as React.CSSProperties
+              }
+            >
+              <div className="balloon-inner">
+                <div className="balloon-body" />
+                <div className="balloon-knot" />
+                <div className="balloon-string" />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       <section className="comic-strip" aria-label="Fate">
