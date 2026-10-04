@@ -14,6 +14,26 @@ const comicPanels = Object.keys(panelModules)
   .sort()
   .map((key) => panelModules[key]);
 
+// Fixed sparkle layout for the opening screen (percent positions).
+const SPARKLES = [
+  { x: 8, y: 14, size: 4, delay: 0.0, dur: 3.2, star: true },
+  { x: 22, y: 30, size: 3, delay: 1.1, dur: 2.8, star: false },
+  { x: 15, y: 62, size: 5, delay: 0.6, dur: 3.6, star: true },
+  { x: 30, y: 80, size: 3, delay: 2.0, dur: 3.0, star: false },
+  { x: 46, y: 10, size: 3, delay: 1.6, dur: 2.6, star: false },
+  { x: 58, y: 22, size: 5, delay: 0.3, dur: 3.4, star: true },
+  { x: 72, y: 12, size: 3, delay: 2.4, dur: 2.9, star: false },
+  { x: 86, y: 28, size: 4, delay: 0.9, dur: 3.1, star: true },
+  { x: 80, y: 56, size: 3, delay: 1.9, dur: 2.7, star: false },
+  { x: 90, y: 74, size: 5, delay: 0.4, dur: 3.5, star: true },
+  { x: 66, y: 86, size: 3, delay: 1.3, dur: 2.8, star: false },
+  { x: 50, y: 94, size: 4, delay: 2.2, dur: 3.3, star: true },
+  { x: 38, y: 48, size: 2, delay: 0.7, dur: 2.5, star: false },
+  { x: 62, y: 44, size: 2, delay: 1.5, dur: 2.6, star: false },
+  { x: 10, y: 90, size: 3, delay: 2.7, dur: 3.0, star: false },
+  { x: 94, y: 48, size: 2, delay: 0.2, dur: 2.4, star: false },
+];
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -137,10 +157,38 @@ function BirthdayStory() {
           type="button"
           className={`gift-gate ${opening ? "gift-gate-opening" : ""}`}
           onClick={openGift}
-          aria-label="Open"
+          aria-label="Open your gift"
         >
-          <span className="gift-title">Happy birthday, Mya</span>
-          <span className="gift-instruction">tap to open</span>
+          <span className="gift-glow" aria-hidden="true" />
+          <span className="gift-sparkles" aria-hidden="true">
+            {SPARKLES.map((sp, i) => (
+              <i
+                key={i}
+                className={sp.star ? "star" : undefined}
+                style={
+                  {
+                    left: `${sp.x}%`,
+                    top: `${sp.y}%`,
+                    "--size": `${sp.size}px`,
+                    "--delay": `${sp.delay}s`,
+                    "--dur": `${sp.dur}s`,
+                  } as React.CSSProperties
+                }
+              />
+            ))}
+          </span>
+
+          <span className="gift-eyebrow">it's your day</span>
+          <span className="gift-title">
+            <span className="gift-title-line">Happy</span>
+            <span className="gift-title-line">Birthday</span>
+          </span>
+          <span className="gift-name">Mya</span>
+
+          <span className="gift-instruction">
+            <span className="gift-ring" aria-hidden="true" />
+            <span className="gift-instruction-text">tap to open your gift</span>
+          </span>
         </button>
       )}
 
