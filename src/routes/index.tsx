@@ -2,70 +2,64 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 
-import panelOne from "../assets/webtoon-panel-01.jpg";
-import panelTwo from "../assets/webtoon-panel-02.jpg";
-import panelThree from "../assets/webtoon-panel-03.jpg";
-import musicAsset from "../assets/mya-soft-theme.wav.asset.json";
+import promiseImage from "../assets/promise.webp";
+
+// All 32 panels, in reading order.
+const panelModules = import.meta.glob("../assets/panel-*.webp", {
+  eager: true,
+  import: "default",
+}) as Record<string, string>;
+
+const comicPanels = Object.keys(panelModules)
+  .sort()
+  .map((key) => panelModules[key]);
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Happy birthday, Mya" },
-      {
-        name: "description",
-        content: "A private birthday story, made with love for Mya.",
-      },
+      { name: "description", content: "For Mya." },
       { property: "og:title", content: "Happy birthday, Mya" },
-      {
-        property: "og:description",
-        content: "A private birthday story, made with love for Mya.",
-      },
+      { property: "og:description", content: "For Mya." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: BirthdayStory,
 });
 
-// Add future panel imports above, then place them in this array in reading order.
-const comicPanels = [panelOne, panelTwo, panelThree];
-
-function RevealPanel({ src, index }: { src: string; index: number }) {
-  const panelRef = useRef<HTMLElement>(null);
+function Reveal({
+  children,
+  className = "",
+  once = true,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  once?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const panel = panelRef.current;
-    if (!panel) return;
-
+    const el = ref.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
           setVisible(true);
-          observer.disconnect();
+          if (once) observer.disconnect();
         }
       },
-      { rootMargin: "0px 0px -8%", threshold: 0.08 },
+      { rootMargin: "0px 0px -6%", threshold: 0.06 },
     );
-
-    observer.observe(panel);
+    observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [once]);
 
   return (
-    <figure
-      ref={panelRef}
-      className={`comic-panel ${visible ? "comic-panel-visible" : ""}`}
-    >
-      <img
-        src={src}
-        alt={`Chapter panel ${index + 1}`}
-        width={768}
-        height={1365}
-        loading={index === 0 ? "eager" : "lazy"}
-        fetchPriority={index === 0 ? "high" : "auto"}
-      />
-    </figure>
+    <div ref={ref} className={`reveal ${visible ? "reveal-visible" : ""} ${className}`}>
+      {children}
+    </div>
   );
 }
 
@@ -75,68 +69,104 @@ function BirthdayStory() {
   const [opening, setOpening] = useState(false);
   const [muted, setMuted] = useState(false);
 
+  // Seamless loop: jump back slightly before the true end to avoid the gap
+  // some browsers leave between loop iterations.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTime = () => {
+      if (audio.duration && audio.currentTime > audio.duration - 0.08) {
+        audio.currentTime = 0;
+      }
+    };
+    audio.addEventListener("timeupdate", onTime);
+    return () => audio.removeEventListener("timeupdate", onTime);
+  }, []);
+
   const openGift = () => {
     if (opening || opened) return;
-    const audio = audioRef.current;
     setOpening(true);
 
+    const audio = audioRef.current;
     if (audio) {
       audio.volume = 0;
-      void audio.play().then(() => {
-        const startedAt = performance.now();
-        const fadeIn = (now: number) => {
-          const progress = Math.min((now - startedAt) / 2400, 1);
-          audio.volume = 0.34 * progress;
-          if (progress < 1) requestAnimationFrame(fadeIn);
-        };
-        requestAnimationFrame(fadeIn);
-      });
+      audio
+        .play()
+        .then(() => {
+          const start = performance.now();
+          const fade = (now: number) => {
+            const t = Math.min((now - start) / 2600, 1);
+            audio.volume = 0.4 * t;
+            if (t < 1) requestAnimationFrame(fade);
+          };
+          requestAnimationFrame(fade);
+        })
+        .catch(() => {
+          /* if playback is refused, the page still opens */
+        });
     }
 
-    window.setTimeout(() => setOpened(true), 850);
+    window.setTimeout(() => setOpened(true), 900);
   };
 
   const toggleMute = () => {
-    const nextMuted = !muted;
-    setMuted(nextMuted);
-    if (audioRef.current) audioRef.current.muted = nextMuted;
+    const next = !muted;
+    setMuted(next);
+    if (audioRef.current) audioRef.current.muted = next;
   };
 
   return (
     <main className="birthday-story">
-      <audio ref={audioRef} src={musicAsset.url} loop preload="auto" />
+      <audio ref={audioRef} src="/mya.mp3" loop preload="auto" playsInline />
 
       {!opened && (
         <button
           type="button"
           className={`gift-gate ${opening ? "gift-gate-opening" : ""}`}
           onClick={openGift}
-          aria-label="Open Mya's birthday story"
+          aria-label="Open"
         >
           <span className="gift-title">Happy birthday, Mya</span>
           <span className="gift-instruction">tap to open</span>
         </button>
       )}
 
-      <section className="comic-strip" aria-label="Our story">
-        {comicPanels.map((panel, index) => (
-          <RevealPanel key={panel} src={panel} index={index} />
+      <section className="comic-strip" aria-label="Fate">
+        {comicPanels.map((src, i) => (
+          <Reveal key={src} className="comic-panel">
+            <img
+              src={src}
+              alt=""
+              width={1024}
+              height={1536}
+              loading={i < 2 ? "eager" : "lazy"}
+              decoding="async"
+              fetchPriority={i === 0 ? "high" : "auto"}
+            />
+          </Reveal>
         ))}
       </section>
 
-      <section className="ending" aria-label="A note for Mya">
-        <div className="ending-note">
-          <p>My dearest Mya,</p>
-          <p>
-            This is where your note will go — the little things you remember,
-            the moment you knew, and everything you can’t wait to share next.
-          </p>
-          <p>Always yours,</p>
-        </div>
-        <div className="photo-placeholder" role="img" aria-label="Our photo placeholder">
-          <span>our photo</span>
-        </div>
-        <p className="continuation">To be continued… until Japan.</p>
+      <section className="ending">
+        <Reveal className="continuation-wrap">
+          <p className="continuation">To be continued… until Japan.</p>
+        </Reveal>
+
+        <div className="breath" aria-hidden="true" />
+
+        <Reveal className="promise">
+          <img src={promiseImage} alt="" width={1206} height={1819} loading="lazy" decoding="async" />
+        </Reveal>
+
+        <Reveal className="word-wrap">
+          <p className="word">You have my word.</p>
+        </Reveal>
+
+        <div className="breath breath-long" aria-hidden="true" />
+
+        <Reveal className="signoff-wrap">
+          <p className="signoff">Made for Mya by Stevie</p>
+        </Reveal>
       </section>
 
       {opened && (
@@ -144,8 +174,7 @@ function BirthdayStory() {
           type="button"
           className="sound-control"
           onClick={toggleMute}
-          aria-label={muted ? "Unmute music" : "Mute music"}
-          title={muted ? "Unmute music" : "Mute music"}
+          aria-label={muted ? "Unmute" : "Mute"}
         >
           {muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
         </button>
